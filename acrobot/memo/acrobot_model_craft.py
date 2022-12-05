@@ -13,7 +13,7 @@ Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'
 
 #定数の設定
 ENV = 'Acrobot-v1' #使用する課題名
-GAMMA = 0.99 #時間割引率 可変 疎0.97
+GAMMA = 0.93 #時間割引率 可変 疎0.97
 MAX_STEPS = 500 #1試行のステップ数
 NUM_EPISODES = 1000 #最大試行回数
 LR = 0.01 #可変 疎0.0023
