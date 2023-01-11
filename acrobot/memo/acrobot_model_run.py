@@ -48,7 +48,7 @@ for num in range(model_count):
     model.eval()
     point = 0
 
-    for i in range(500):
+    for steps in range(500):
         
         state = torch.from_numpy(state).type(torch.FloatTensor)
         state = torch.unsqueeze(state, 0)
@@ -57,16 +57,28 @@ for num in range(model_count):
         # １ステップ実行
         state, rewards, done, _ = env.step(action.item())
         #state, rewards, done, _ = env.step(0)
+
+        if done:
+            state_next = None
+
+            if steps < 498:
+                rewards = 500
+            else:
+                rewards = -1
+        else:
+            rewards = 0
+                    
+
         point += rewards 
         #frames.append(env.render(mode='rgb_array'))
 
         # エピソード完了判定
         if done:
-            print(str(num) + "モデル : " + str(point) + "ポイント : ステップ数 " + str(i))
-            if point != -500.0:
+            print(str(num) + "モデル : " + str(point) + "ポイント : ステップ数 " + str(steps))
+            if point != -1.0:
                 clear_model_count += 1
 
-            result.append(i)
+            result.append(steps)
 
             break
 
@@ -97,5 +109,5 @@ with open('acrobot_result.csv', 'w') as f:
     print(f"499step未満 : {sum(480 <= x < 499 for x in result)}")
     writer.writerow([500, sum(480 <= x < 499 for x in result)])
     print(f"500step : {sum(x == 499 for x in result)}")
-    writer.writerow([200, sum(x == 499 for x in result)])
+    writer.writerow([500, sum(x == 499 for x in result)])
     writer.writerow(["クリアしたモデル数 : ", clear_model_count])

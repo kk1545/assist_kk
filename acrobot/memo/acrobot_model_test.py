@@ -22,11 +22,11 @@ from collections import namedtuple
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
 #定数の設定
-ENV = 'MountainCar-v0' #使用する課題名
+ENV = 'Acrobot-v1' #使用する課題名
 GAMMA = 0.99 #時間割引率　#可変
-MAX_STEPS = 200 #1試行のステップ数
-NUM_EPISODES = 10000 #最大試行回数
-Lr = 0.0001
+MAX_STEPS = 500 #1試行のステップ数
+NUM_EPISODES = 1000 #最大試行回数
+Lr = 0.01
 
 #経験を保存するメモリクラスを定義
 
@@ -279,16 +279,16 @@ class Environment:
                         (episode_10_list[1:], step + 1))
 
                     if step < MAX_STEPS - 1:
-                        point += 200
-                        reward = torch.FloatTensor([200.0])  # MAX_STEPS以内にクリアしたら報酬を与える
+                        point += 1
+                        reward = torch.FloatTensor([1.0])  # MAX_STEPS以内にクリアしたら報酬を与える
                         complete_episodes = complete_episodes + 1  # 連続成功記録を更新
                     else:
                         point += -1
                         reward = torch.FloatTensor([-1.0])  # クリアし無かったら罰則として報酬-1を与える
                         complete_episodes = 0  # 連続記録をリセット
                 else:
-                    point += -1
-                    reward = torch.FloatTensor([-1.0])  # 普段は報酬0
+                    point += 0
+                    reward = torch.FloatTensor([0.0])  # 普段は報酬0
                     state_next = observation_next  # 観測をそのまま状態とする
                     state_next = torch.from_numpy(state_next).type(
                         torch.FloatTensor)  # numpy変数をPyTorchのテンソルに変換
@@ -317,12 +317,12 @@ class Environment:
             if episode_final is True:
                 # 動画を保存と描画
                 #display_frames_as_gif(frames)
-                print(str(model_n+1) + "モデル : " + str(best_point) + "ポイント : ステップ数 " + str(best_step) + " : 最終ステップ " + str(step))
+                print(str(model_n+1) + "モデル : " + str(best_point) + "ポイント : ステップ数 " + str(best_step) + " : 最終ステップ " + str(step) + " : episode" + str(episode))
                 print("GAMMA : " + str(GAMMA) + " , Lr : " + str(Lr)) #GAMMA or Lr
 
-                with open('mountaincar_test.csv', 'a') as f:
+                with open('acrobot_test.csv', 'a') as f:
                     writer = csv.writer(f)
-                    writer.writerow([model_n+1, best_point, best_step, step]) #GAMMA or Lr
+                    writer.writerow([model_n+1, best_point, best_step, step, episode]) #GAMMA or Lr
                 
                 best.best_model_change(best_step)
                 #self.agent.save()
@@ -331,10 +331,11 @@ class Environment:
 
             
             # 10連続で200step経ち続けたら成功
+            """
             if complete_episodes >= 10:
                 #print('10回連続成功')
                 episode_final = True  # 次の試行を描画を行う最終試行とする
-            
+            """
             
             if episode == (NUM_EPISODES-2):
                 episode_final = True
@@ -357,15 +358,15 @@ class Best_model_choice:
 
 # main クラス
 GAMMA = 0.99
-Lr = 0.01
+Lr = 0.0001
 
 cflag = True
 
 best = Best_model_choice()
 
-with open('mountaincar_test.csv', 'w') as f:
+with open('acrobot_test.csv', 'w') as f:
                     writer = csv.writer(f)
-                    writer.writerow(["モデル番号", "ベストポイント", "ベストステップ", "最終ステップ"])
+                    writer.writerow(["モデル番号", "ベストポイント", "ベストステップ", "最終ステップ", "episode"])
                     writer.writerow([])
                     writer.writerow([f"GAMMA = {GAMMA}", f"Lr = {Lr}"])
 
@@ -377,17 +378,17 @@ for model_n in range(1000):
         
         """ 値変更 """
         if cflag:
-            Lr = round(Lr+0.02, 2)
-            if Lr >= 0.1:
+            Lr = round(Lr+0.0001, 4)
+            if Lr >= 0.001:
                 cflag = False
         else:
-            GAMMA =round(GAMMA-0.02, 2)
-            Lr = 0.01
+            GAMMA =round(GAMMA-0.01, 2)
+            Lr = 0.0001
             cflag = True
         
         best.best_model_reset()
         print()
-        with open('mountaincar_test.csv', 'a') as f:
+        with open('acrobot_test.csv', 'a') as f:
                     writer = csv.writer(f)
                     writer.writerow([])
                     writer.writerow([f"GAMMA = {GAMMA}", f"Lr = {Lr}"])

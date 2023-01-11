@@ -13,10 +13,10 @@ Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'
 
 #定数の設定
 ENV = 'Acrobot-v1' #使用する課題名
-GAMMA = 0.93 #時間割引率 可変 疎0.97
+GAMMA = 0.99 #時間割引率 可変 疎0.97
 MAX_STEPS = 500 #1試行のステップ数
 NUM_EPISODES = 1000 #最大試行回数
-LR = 0.01 #可変 疎0.0023
+LR = 0.0001 #可変 疎0.0023
 
 
 #経験を保存するメモリクラスを定義
@@ -71,10 +71,10 @@ class Brain:
         self.model = nn.Sequential()
         self.model.add_module('fc1', nn.Linear(num_states, middle))
         self.model.add_module('relu1', nn.ReLU())
-        self.model.add_module('dropout', nn.Dropout())
+        #self.model.add_module('dropout', nn.Dropout())
         self.model.add_module('fc2', nn.Linear(middle, middle))
         self.model.add_module('relu2', nn.ReLU())
-        self.model.add_module('dropout', nn.Dropout())
+        #self.model.add_module('dropout', nn.Dropout())
         self.model.add_module('fc3', nn.Linear(middle, num_actions))
 
         #print(self.model)  # ネットワークの形を出力
@@ -231,6 +231,8 @@ class Environment:
         episode_final = False  # 最後の試行フラグ
         best_point = -500
         best_step = 500
+
+        sparce = False #疎か密か　疎:True
         
 
         for episode in range(NUM_EPISODES):  # 最大試行数分繰り返す
@@ -261,22 +263,31 @@ class Environment:
                 observation_next, _, done, _ = self.env.step(
                     action.item())  # rewardとinfoは使わないので_にする
                 
-
+                #sparce 疎な報酬環境:True　密な報酬環境:False
                 if done:
                     state_next = None
 
                     if step < 498:
-                        point += 500
-                        reward = torch.FloatTensor([500.0])
+                        point += 0
+                        reward = torch.FloatTensor([0.0])
                         complete_episodes = complete_episodes + 1
                     else:
                         point += -1
                         reward = torch.FloatTensor([-1.0])
                         complete_episodes = 0
                 else:
-                    
-                    point += 0
-                    reward = torch.FloatTensor([0.0])
+                    if sparce:
+                        point += 0
+                        reward = torch.FloatTensor([0.0])
+                    else:
+                        theta = observation_next[0]
+
+                        if theta < 0:
+                            point += 1
+                            reward = torch.FloatTensor([1.0])
+                        else:
+                            point += -1
+                            reward = torch.FloatTensor([-1.0])
                     
                     state_next = observation_next  # 観測をそのまま状態とする
                     state_next = torch.from_numpy(state_next).type(torch.FloatTensor)  # numpy変数をPyTorchのテンソルに変換
@@ -314,10 +325,11 @@ class Environment:
                 break
 
             # 10連続で200step経ち続けたら成功
+            """
             if complete_episodes >= 10 or episode == (NUM_EPISODES-2):
                 #print('10回連続成功')
                 episode_final = True  # この試行を描画を行う最終試行とする
-            
+            """
             if episode == (NUM_EPISODES-2):
                 episode_final = True
 
